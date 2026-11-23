@@ -1,0 +1,51 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Meu Financeiro</title><link rel="stylesheet" href="style.css"></head><body><section id="authScreen" class="authScreen"><form id="authForm" class="authBox"><h1>◈ Meu Financeiro</h1><p>Entre para acessar suas finanças</p><label>E-mail<input type="email" name="email" autocomplete="email" required></label><label>Senha<input type="password" name="password" autocomplete="current-password" required minlength="6"></label><p id="authMessage" role="alert"></p><div class="actions"><button type="button" id="signUpBtn">Criar conta</button><button class="primary" type="submit" id="signInBtn">Entrar</button></div><p class="foot">Se o Supabase exigir confirmação, verifique seu e-mail.</p></form></section><div class="layout hidden" id="appLayout"><aside><div class="brand">◈ Meu Financeiro</div><nav><button class="nav active" data-page="dashboard">▦ Dashboard</button><button class="nav" data-page="lancamentos">⇄ Lançamentos</button><button class="nav" data-page="parcelas">▤ Parcelas</button><button class="nav" data-page="projecoes">▥ Projeções</button><button class="nav" data-page="analises">◉ Análises</button><button class="nav" data-page="faturas">▤ Faturas</button><button class="nav" data-page="objetivos">◎ Poupança e objetivos</button><button class="nav" data-page="config">⚙ Configurações</button></nav><small>Dados sincronizados com sua conta</small></aside><main><header><div><span class="eyebrow">CONTROLE FINANCEIRO PESSOAL</span><h1 id="pageTitle">Dashboard</h1></div><div class="toolbar"><div class="monthNav"><button type="button" data-month-step="-1" aria-label="Mês anterior">‹</button><input id="month" type="month" aria-label="Mês selecionado"><button type="button" data-month-step="1" aria-label="Próximo mês">›</button></div><button id="addBtn" class="primary">+ Novo lançamento</button></div></header><div id="notice" role="status"></div><section id="dashboard" class="page"></section><section id="lancamentos" class="page hidden"></section><section id="parcelas" class="page hidden"></section><section id="projecoes" class="page hidden"></section><section id="analises" class="page hidden"></section><section id="faturas" class="page hidden"></section><section id="objetivos" class="page hidden"></section><section id="config" class="page hidden"></section></main></div><dialog id="entryDialog"><form id="entryForm"><div class="dialogHead"><h2 id="entryDialogTitle">Novo lançamento</h2><button type="button" id="closeDialog" class="quiet">✕</button></div><label>Tipo<select name="type" id="entryType"><option value="expense">Despesa</option><option value="income">Receita</option></select></label><label>Descrição<input name="description" required maxlength="120" placeholder="Ex.: Compra de equipamento"></label><div class="two"><label>Valor total (R$)<input name="amount" type="number" min="0.01" step="0.01" required placeholder="1200.00"></label><label>Categoria<select name="category" id="entryCategory"></select></label></div><div class="two"><label>Data da primeira ocorrência<input name="date" type="date" required></label><label>Forma<select name="payment" id="payment"><option value="single">À vista</option><option value="installment">Parcelado</option><option value="recurring">Mensal recorrente</option></select></label></div><label>Tag / origem do pagamento<input name="tag" id="entryTag" list="tagSuggestions" maxlength="60" placeholder="Ex.: Cartão de crédito"><datalist id="tagSuggestions"><option value="Cartão de crédito"><option value="Pix"><option value="Dinheiro"><option value="Débito"><option value="Boleto"><option value="Crediário"><option value="Poupança"></datalist></label><label id="cardWrap">Cartão para a fatura (opcional)<input name="card" maxlength="60" placeholder="Ex.: Nubank. Use a data de vencimento da fatura."></label><label id="recurringScopeWrap" class="hidden">Aplicar a<select name="recurringScope"><option value="month">Apenas esta competência</option><option value="future">Esta competência e as seguintes</option></select></label><p id="entryError" class="negative" role="alert"></p><label id="partsWrap" class="hidden">Quantidade de parcelas<input name="parts" type="number" min="2" max="120" value="6"></label><p class="muted" id="installmentPreview"></p><div class="actions"><button type="button" id="cancelDialog">Cancelar</button><button class="primary" id="saveEntryBtn" type="submit">Salvar lançamento</button></div></form></dialog><dialog id="goalDialog" aria-labelledby="goalTitle">
+<form id="goalForm">
+<h2 id="goalTitle">Novo objetivo</h2>
+<label>Nome do objetivo<input name="name" required maxlength="100" placeholder="Ex.: Quitar o carro"></label>
+<div class="two">
+<label>Valor a alcançar (R$)<input name="target" type="number" min="0.01" max="999999999.99" step="0.01" required placeholder="7500.00"></label>
+<label>Saldo inicial guardado (R$)<input name="saved" type="number" min="0" max="999999999.99" step="0.01" value="0" required></label>
+</div>
+<div class="two">
+<label>Data limite <input name="deadline" type="date" max="9999-12-31"></label>
+<label>Quantidade de parcelas <input name="installments" type="number" min="1" max="600" step="1" placeholder="Ex.: 12"></label>
+</div>
+<p class="foot">Prazo e parcelas são opcionais. O valor por parcela é calculado sobre o saldo que falta juntar.</p>
+<p id="goalError" class="negative" role="alert"></p>
+<div class="actions"><button type="button" id="cancelGoal">Cancelar</button><button class="primary" type="submit">Salvar objetivo</button></div>
+</form>
+</dialog>
+<dialog id="simulationDialog" aria-labelledby="simulationTitle">
+<form id="simulationForm">
+<h2 id="simulationTitle">Simular objetivo</h2>
+<p id="simulationMonth" class="foot"></p>
+<label>Calcular<select name="mode"><option value="deadline">Aporte mensal a partir de uma data limite</option><option value="budget">Data estimada a partir de um aporte mensal</option></select></label>
+<label id="simulationDeadline">Data limite<input name="deadline" type="date" max="9999-12-31"></label>
+<label id="simulationBudget" class="hidden">Aporte mensal (R$)<input name="budget" type="number" min="0.01" max="999999999.99" step="0.01"></label>
+<label>Aporte extra no mês inicial (R$)<input name="extra" type="number" min="0" max="999999999.99" step="0.01" value="0" required></label>
+<output id="simulationResult" aria-live="polite"></output>
+<div class="actions"><button type="button" id="closeSimulation">Fechar</button></div>
+</form>
+</dialog>
+<dialog id="planDialog" aria-labelledby="planTitle">
+<form id="planForm">
+<h2 id="planTitle">Planejar aporte</h2>
+<label>Mês do aporte<input name="month" type="month" required></label>
+<label>Valor planejado (R$)<input name="amount" type="number" min="0" max="999999999.99" step="0.01" required></label>
+<p class="foot">Use zero para remover o plano deste mês.</p>
+<p id="planError" class="negative" role="alert"></p>
+<div class="actions"><button type="button" id="closePlan">Cancelar</button><button class="primary" type="submit">Salvar plano</button></div>
+</form>
+</dialog>
+<dialog id="depositDialog" aria-labelledby="depositTitle">
+<form id="depositForm">
+<h2 id="depositTitle">Novo aporte</h2>
+<div class="two">
+<label>Valor (R$)<input name="amount" type="number" min="0.01" max="999999999.99" step="0.01" required></label>
+<label>Data do aporte<input name="date" type="date" required></label>
+</div>
+<label>Descrição (opcional)<input name="description" maxlength="100" placeholder="Ex.: Aporte do mês"></label>
+<p id="depositError" class="negative" role="alert"></p>
+<div class="actions"><button type="button" id="cancelDeposit">Cancelar</button><button class="primary" type="submit">Salvar aporte</button></div>
+</form>
+</dialog><input type="file" id="importFile" accept="application/json,.json" hidden><input type="file" id="mergeFile" accept="application/json,.json" hidden><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="config.js"></script><script src="cloud.js"></script><script src="app.js?v=2.0.1"></script></body></html>
