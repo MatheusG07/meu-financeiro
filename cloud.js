@@ -10,7 +10,11 @@
  const configured=cfg.supabaseUrl?.startsWith('https://') && cfg.supabaseAnonKey && !cfg.supabaseAnonKey.startsWith('COLE_');
  let client, active=false, syncing=Promise.resolve();
  const Cloud=window.Cloud={enabled:false,user:null,sync};
- function message(s){notice.textContent=s}
+ function message(s){
+   const target=document.getElementById('authNotice') || document.getElementById('authMessage');
+   if(target){target.textContent=String(s ?? '');target.setAttribute('role','status')}
+   else console.warn('Aviso de autenticação:',s);
+ }
  function getClient(){
    if(!configured)throw Error('Configure a URL e a chave pública em config.js.');
    if(!window.supabase?.createClient)throw Error('Biblioteca Supabase indisponível. Verifique sua conexão.');
@@ -29,10 +33,10 @@
    const snapshot={entries:await getAll(db,'entries'),goals:await getAll(db,'goals')};
    const job=syncing.catch(()=>{}).then(async()=>{
      if(!Cloud.enabled||Cloud.user?.id!==userId)throw Error('Sessão alterada durante sincronização.');
-     status.textContent='· sincronizando…';
+     if(status)status.textContent='· sincronizando…';
      const {error}=await getClient().from('finance_data').upsert({user_id:userId,payload:snapshot,updated_at:new Date().toISOString()},{onConflict:'user_id'});
      if(error)throw error;
-     status.textContent='· sincronizado';
+     if(status)status.textContent='· sincronizado';
    });
    syncing=job;return job;
  }
@@ -61,12 +65,21 @@
    }finally{db.close()}
    Cloud.enabled=true;
    active=true;
-   authScreen.classList.add('hidden');appLayout.classList.remove('hidden');
-   status.textContent='· conectado';
-   await window.startFinanceiro();
+   if(typeof window.startFinanceiro !== 'function')throw Error('O aplicativo não foi carregado. Verifique app.js.');
+   if(authScreen)authScreen.classList.add('hidden');
+   if(appLayout)appLayout.classList.remove('hidden');
+   if(status)status.textContent='· conectado';
+   try{await window.startFinanceiro()}catch(err){
+     active=false;Cloud.enabled=false;
+     if(authScreen)authScreen.classList.remove('hidden');
+     if(appLayout)appLayout.classList.add('hidden');
+     throw err;
+   }
  }
  async function handleAuth(signUp){
-   const btn=document.getElementById(signUp?'signUpBtn':'signInBtn');btn.disabled=true;
+   const btn=document.getElementById(signUp?'signUpBtn':'signInBtn');
+   if(btn)btn.disabled=true;
+   message('Conectando ao Supabase…');
    try{
      const c=getClient();const e=email.value.trim(),p=password.value;
      if(!e||p.length<6)throw Error('Informe um e-mail e uma senha com pelo menos 6 caracteres.');
@@ -81,11 +94,11 @@
        if(error)throw error;
        await activate(data.user);
      }
-   }catch(err){message(err.message)}finally{btn.disabled=false}
+   }catch(err){console.error('Falha de autenticação/inicialização:',err);message(err?.message||'Falha ao entrar. Verifique o console.')}finally{if(btn)btn.disabled=false}
  }
- document.getElementById('authForm').addEventListener('submit',e=>{e.preventDefault();handleAuth(false)});
- document.getElementById('signUpBtn').addEventListener('click',()=>handleAuth(true));
- document.getElementById('logoutBtn').addEventListener('click',async()=>{
+ document.getElementById('authForm')?.addEventListener('submit',e=>{e.preventDefault();void handleAuth(false)});
+ document.getElementById('signUpBtn')?.addEventListener('click',()=>void handleAuth(true));
+ document.getElementById('logoutBtn')?.addEventListener('click',async()=>{
    if(!confirm('Sair da conta?'))return;
    try{await syncing.catch(()=>{});await getClient().auth.signOut();location.reload()}catch(err){alert(err.message)}
  });
@@ -95,6 +108,6 @@
      const {data,error}=await c.auth.getUser();
      if(!error&&data.user)await activate(data.user);
      else message('Entre ou crie uma conta para começar.');
-   }catch(err){message(err.message)}
+   }catch(err){console.error('Falha ao restaurar sessão:',err);message(err?.message||'Não foi possível restaurar a sessão.')}
  })();
 })();
